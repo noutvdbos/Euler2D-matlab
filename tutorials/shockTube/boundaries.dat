@@ -1,0 +1,5 @@
+%Physical curve value (must match with mesh.geo) %boundary type
+1 inlet
+2 wall
+3 outlet
+4 wall

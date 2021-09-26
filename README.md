@@ -1,1 +1,5 @@
-# Euler2D-matlab
+This repo holds a 2D Euler solver for unstructured grids. In "report.pdf", a small report discusses the used methodology as well as the results for two test cases. The two testcases are Sod's shocktube and a forward step at Mach 3. For Sod's shocktube, both an unstructured mesh case and a structured mesh case are available. The cases can be found in the "test" folder. 
+
+To run a new simulation, one must create a folder with the following 2 inputs: a mesh file that is created in gmsh, and exported into a MATLAB file format (.m). In order to do this, in gmsh go to Help -> Current Options and Workspace -> Mesh.Format, and set the value to 50. The second file that is necessary is the input file, "input.m". In here, all relevant inputs must be given, such as the initial conditions, the location of the mesh file, and initial time step among others. For an example, see the two provided test cases. Finally, to run a case, go to "main.m" and set the correct paths for "runFolder" and "runFile". 
+
+The results are saved in vtk format, and can be opened and post-processed with ParaView.

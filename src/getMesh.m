@@ -95,9 +95,12 @@ fprintf(" -- This took %5.4f seconds\n",toc);
 fprintf("calculating the elements-faces matrix\n");
 tic
 
-%create list of all the faces, create list that lists the faces of each 
+%Create a list of all the faces, create list that lists the faces of each 
 %element, and create list that lists the elements of each face
 
+%The current algorithm is a placeholder algorithm, as it is O(N^2). It is
+%planned to update this to a O(N*log(N)) algorithm. For now it is only
+%suitable to use for relatively small meshes (up to 20.000).
 
 nfaces = msh.nbNod+msh.nel -1; %euler characteristic for 2d
 faces = zeros(nfaces,2);

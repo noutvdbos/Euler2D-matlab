@@ -7,11 +7,8 @@ function newField = centresToNodes(mesh, field)
 newField = zeros(mesh.nbNod,size(field,2));
 
 for i = 1:mesh.nbNod
-    if ( size(rmmissing(mesh.verts(i,:)),2) == 1)
-        newField(i,:) = field(rmmissing(mesh.verts(i,:)),:);
-    else
-        newField(i,:) = mean(field(rmmissing(mesh.verts(i,:)),:));
-    end
+    newField(i,:) = mean( field(mesh.elsup1( mesh.elsup2(i)+1: ...
+                                mesh.elsup2(i+1)),:));
 end
 
 end

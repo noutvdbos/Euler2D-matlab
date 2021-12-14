@@ -10,7 +10,7 @@ addpath(genpath(pwd))
 %Load the inputs, this loads the mesh, the initial conditions, and the time
 %criteria. Examples of all necesarry variables in the input files can be
 %found in the tutorials.
-runFolder = "./tutorials/shockTube/"; %the relative path to the folder 
+runFolder = "./tutorials/cpp_test/"; %the relative path to the folder 
                                       %where the input file is stored
                                       
 runFile   = "input.m";                %the name of the input file  

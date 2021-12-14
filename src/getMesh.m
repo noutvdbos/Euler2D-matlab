@@ -73,73 +73,103 @@ msh.cents = cents;
 
 fprintf(" -- This took %5.4f seconds\n",toc);
 
-%Create vertices-elements connections,maximum number
-%of elements using 1 node will probably not go higher than 7.
-%TODO: check actual maximum
+%Create vertices-elements connections, average number
+%of elements using 1 node will not go higher than 10.
+
+% The vertices-elements connections stored as a linked list, so they  are 
+% divided into 2 arrays, elsup1(elements surrounding points 1) stores the 
+% elements, and elsup2 stores the start and end index of the elements that
+% surround a point. example: for point ipoint, the elements surrounding
+% this point are stored in elsup1( elsup2(ipoint)+1 : elsup2(ipoint+1) );
 
 fprintf("calculating the vertex-elements matrix\n");
 tic
 nelmax = 10;
-verts = zeros(msh.nbNod,nelmax);
 
-for i = 1:msh.nbNod
-    temp = find(any(msh.elems==i,2))';
-    verts(i,:) = [temp NaN*zeros(1,nelmax-length(temp))] ;
-end
+elsup1 = zeros(length(msh.coords)*nelmax,1); 
+elsup2 = zeros(length(msh.coords)+1,1);
 
-msh.verts = verts;
-
-fprintf(" -- This took %5.4f seconds\n",toc);
-
-
-fprintf("calculating the elements-faces matrix\n");
-tic
-
-%create list of all the faces, create list that lists the faces of each 
-%element, and create list that lists the elements of each face
-
-
-nfaces = msh.nbNod+msh.nel -1; %euler characteristic for 2d
-faces = zeros(nfaces,2);
-faceElems = zeros(nfaces,2);
-elemFaces = zeros(msh.nel,msh.nnel);
-
-idx = 1;
-for i = 1:msh.nel
-    for j = 1:msh.nnel
-       if (j<msh.nnel)
-            node1 = msh.elems(i,j);
-            node2 = msh.elems(i,j+1);
-        else
-            node1 =  msh.elems(i,j);
-            node2 =  msh.elems(i,1);
-       end
-       
-       temp = find( any(msh.elems(:,:)==node1,2) & ...
-             any(msh.elems(:,:)==node2,2) ); 
-         
-       if (i == temp(1))
-         faces(idx,:) = [node1 node2];
-         faceElems(idx,:) = temp;
-         elemFaces(i,j) = idx;
-         idx = idx+1;
-       else
-           %find previously found face
-           faceNodes = intersect(msh.elems(temp(1),:),msh.elems(temp(2),:));
-           temp = find( all( faces(:,:) == faceNodes,2 ) );
-           
-           if isempty(temp)
-               temp = find( all( faces(:,:) == flip(faceNodes),2 ) );
-           end
-           elemFaces(i,j) = temp;
-       end
+% Pass 1: First count the elements connected to each point
+for i = 1:length(msh.elems)
+    for j = 1:msh.nnel 
+       ipoint = msh.elems(i,j) + 1;
+       elsup2(ipoint) = elsup2(ipoint) +1;
        
     end
 end
 
-msh.faces = faces;
-msh.elemFaces = elemFaces;
-msh.faceElems = faceElems;
+% Reshuffle the first pass
+for i = 2:length(msh.coords)+1
+    elsup2(i) = elsup2(i) + elsup2(i-1);
+end
+
+%Pass 2: store the elements in esup1
+
+maxlen = 0;
+for i = 1:length(msh.elems)
+    for j = 1:msh.nnel 
+       
+       ipoint = msh.elems(i,j);
+       istore = elsup2(ipoint) +1;
+       elsup2(ipoint) = istore;
+       elsup1(istore) = i;
+       
+       maxlen = max(maxlen,istore);
+    end
+end
+
+% Reshuffle the second pass
+for i = length(msh.coords)+1:-1:2    
+    elsup2(i) = elsup2(i-1);
+end
+elsup2(1) = 0;
+
+%Now the max length is known, only store the correct length of esup1.
+msh.elsup2 = elsup2;
+msh.elsup1 = elsup1(1:maxlen);
+
+fprintf(" -- This took %5.4f seconds\n",toc);
+
+
+
+
+% Calculate the elements surrounding elements matrix (elsuel). This matrix stores
+% the neighbour of each face of the owner element. faces are in the
+% convention as follows face1 = (node_1,node2), face2 = (node_2, node3),
+% ..., face_n-1 = (node_n-1,node_n), face_n = (node_n, node_1). I.e. it
+% forms a closed loop.
+
+fprintf("calculating the face-elements matrix\n");
+tic
+
+elsuel = zeros(msh.nnel,msh.nel);
+
+for ielem = 1:msh.nel
+    for iface = 1:msh.nnel     % loop over faces
+        
+        node1 = msh.elems(ielem,iface);
+        if (iface<msh.nnel)
+            node2 = msh.elems(ielem,iface+1);
+        else
+            node2 =  msh.elems(ielem,1);
+       end
+        
+        for istore = elsup2(node1)+1:elsup2(node1+1) %loop over neighbour elements
+            jelem = elsup1(istore);
+
+            if (jelem ~= ielem)
+                npoins = intersect( [node1,node2],msh.elems(jelem,:));
+                
+                if (size(npoins,2) ==2)
+                    elsuel(iface,ielem) = jelem;
+                end
+            end
+        end
+    end
+end
+
+msh.elsuel = elsuel;
+
 
 fprintf(" -- This took %5.4f seconds\n",toc);
 

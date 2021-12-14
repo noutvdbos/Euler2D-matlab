@@ -1,4 +1,4 @@
-function faceFlux = constructFluxVector(mesh,gamma,iface,normal,cellStates)
+function faceFlux = constructFluxVector(mesh,gamma,ielem,jface,cellStates)
 
 %In this function, the flux vector per unit length is constructed for a
 %face. The boundary cells are treated by adding a ghost cell. For now the
@@ -14,17 +14,28 @@ function faceFlux = constructFluxVector(mesh,gamma,iface,normal,cellStates)
 %are first order extrapolated to the boundary, i.e. the ghost cell is
 %assumed to have the same pressure and density as the boundary cell.
 
-cellidx = mesh.faceElems(iface,:);
+cellidx = [ielem, mesh.elsuel(jface,ielem) ];
 
-%If all the cell indexes are equal to the first one, there is only 1 cell
-%attached thus it is a boundary cell.
+if (jface<mesh.nnel)
+    node1 = mesh.elems(ielem,jface);
+    node2 = mesh.elems(ielem,jface+1);
+else
+    node1 =  mesh.elems(ielem,jface);
+    node2 =  mesh.elems(ielem,1);
+end 
 
-if  ( all(cellidx == cellidx(1)) )
+coords = mesh.coords([node1 node2],:); 
+normal = getNormal(coords);
 
-    node1 = mesh.faces(iface,1);
-    node2 = mesh.faces(iface,2);
-    coords = mesh.coords([node1 node2],:);
+h = norm(coords(1,:) - coords(2,:));
 
+% If all the cell indexes mesh.elsuel(jface,ielem) is equal to zero, there
+% are no neighbour cells attached thus it is a boundary cell.
+
+if  ( mesh.elsuel(jface,ielem) == 0 )
+
+    cellidx = [ielem,ielem];
+    
     %inlet/outlet
     if ( all(coords(:,1) == mesh.MIN(1)) )
 
@@ -120,7 +131,8 @@ M1 = 0.5*(Mface+abs(Mface));
 M2 = 0.5*(Mface-abs(Mface));
 
 faceFlux = M1*a(1)*psi(1,:) + M2*a(2)*psi(2,:) + P';
- 
+
+faceFlux = faceFlux*h;
 
 end
 

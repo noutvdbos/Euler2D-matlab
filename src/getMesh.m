@@ -130,9 +130,6 @@ msh.elsup1 = elsup1(1:maxlen);
 
 fprintf(" -- This took %5.4f seconds\n",toc);
 
-
-
-
 % Calculate the elements surrounding elements matrix (elsuel). This matrix stores
 % the neighbour of each face of the owner element. faces are in the
 % convention as follows face1 = (node_1,node2), face2 = (node_2, node3),
